@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Books</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #05b3a4;
+        }
+
+        .books-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .book-card {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .book-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .book-card h2 {
+            margin: 0.5rem 0;
+            color: #333;
+        }
+
+        .book-card p {
+            margin: 0.3rem 0;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .book-card a {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #fff;
+            background: #05b3a4;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        .book-card a:hover {
+            background: #028f7d;
+        }
+
+        @media (max-width: 900px) {
+            .books-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .books-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<%- include('./header') %>
+
+
+    <h1>All Books</h1>
+<div class="books-container">
+    <% books.forEach(book=> { %>
+        <div class="book-card">
+            <img src="<%= book.image %>" alt="<%= book.title %>">
+            <h2>
+                <%= book.title %>
+            </h2>
+            <p><strong>Author:</strong>
+                <%= book.author %>
+            </p>
+            <p><strong>Genre:</strong>
+                <%= book.genre %>
+            </p>
+            <p><strong>Year:</strong>
+                <%= book.year %>
+            </p>
+            <p><strong>Pages:</strong>
+                <%= book.pages %>
+            </p>
+            <p><strong>Language:</strong>
+                <%= book.language %>
+            </p>
+            <p><strong>Description:</strong>
+                <%= book.description %>
+            </p>
+
+            <!-- Download PDF -->
+            <a href="<%= book.pdf %>" download="<%= book.title %>.pdf">Download PDF</a>
+
+            <!-- Delete Book -->
+            <form action="/shop/books/delete/<%= book._id %>" method="POST" style="display:inline-block; margin-top:5px;">
+                <button type="submit"
+                    style="background:red; color:white; padding:0.5rem 1rem; border:none; border-radius:5px; cursor:pointer;">
+                    Delete
+                </button>
+            </form>
+        </div>
+        <% }) %>
+</div>
+</body>
+
+</html>
