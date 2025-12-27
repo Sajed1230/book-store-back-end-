@@ -33,21 +33,52 @@ const transporter = nodemailer.createTransport({
 app.post("/contact", async (req, res) => {
   const { name, email, subject, message } = req.body;
 
+  // Validation
   if (!name || !email || !subject || !message) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ 
+      success: false,
+      error: "All fields are required" 
+    });
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ 
+      success: false,
+      error: "Please provide a valid email address" 
+    });
   }
 
   try {
+    // Check if email is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.EMAIL_USER) {
+      console.log("Email configuration missing. Contact form data:", { name, email, subject, message });
+      
+      // In development, return success even if email isn't configured
+      // In production, you should have email configured
+      return res.status(200).json({ 
+        success: true,
+        message: "Message received! (Email not configured - check server logs for details)" 
+      });
+    }
+
     const mailOptions = {
-      from: `"${name}" <${email}>`,
+      from: `"${name}" <${process.env.SMTP_USER}>`,
+      replyTo: email,
       to: process.env.EMAIL_USER,
-      subject,
+      subject: `Contact Form: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; border-radius: 12px; max-width: 600px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
           <h2 style="color: #05b3a4; text-align:center;">📚 Modern Library Contact Form</h2>
           <div style="background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #05b3a4;">
             <p style="font-size: 16px; color: #333; line-height: 1.5;">${message}</p>
-            <p style="font-size: 14px; color: #555; margin-top: 20px;">From: <strong>${name}</strong> (${email})</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 14px; color: #555;">
+              <strong>From:</strong> ${name}<br>
+              <strong>Email:</strong> <a href="mailto:${email}">${email}</a><br>
+              <strong>Subject:</strong> ${subject}
+            </p>
           </div>
           <p style="text-align:center; font-size: 12px; color: #888; margin-top: 20px;">
             Thank you for contacting Modern Library!
@@ -57,11 +88,29 @@ app.post("/contact", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Message sent successfully!" });
+    res.status(200).json({ 
+      success: true,
+      message: "Message sent successfully! We'll get back to you soon." 
+    });
 
   } catch (error) {
     console.error("Error sending email:", error);
-    res.status(500).json({ error: "Failed to send message" });
+    
+    // More detailed error handling
+    let errorMessage = "Failed to send message";
+    
+    if (error.code === 'EAUTH') {
+      errorMessage = "Email authentication failed. Please check email configuration.";
+    } else if (error.code === 'ECONNECTION') {
+      errorMessage = "Could not connect to email server.";
+    } else if (error.response) {
+      errorMessage = `Email server error: ${error.response}`;
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      error: errorMessage 
+    });
   }
 });
 
@@ -103,7 +152,7 @@ mongoose.connect(process.env.MONGO_URI, {
 })
 .then(() => {
   console.log('Connected to MongoDB Atlas');
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 })
 .catch(err => console.error('MongoDB connection error:', err));
